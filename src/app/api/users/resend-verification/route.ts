@@ -1,7 +1,6 @@
 import { connect } from "@/dbconfig/dbconfig";
 import User from "@/models/userModel";
 import { NextRequest, NextResponse } from "next/server";
-import bcryptjs from "bcryptjs";
 import { sendVerificationEmail } from "@/utils/email";
 
 connect();
@@ -9,54 +8,49 @@ connect();
 export async function POST(request: NextRequest) {
   try {
     const reqBody = await request.json();
-    const { username, email, password } = reqBody;
+    const { email } = reqBody;
 
-    console.log(reqBody);
+    console.log("Resend verification request for:", email);
 
-    //check if user already exists
+    // Find user by email
     const user = await User.findOne({ email });
 
-    if (user) {
-      return NextResponse.json(
-        { error: "User already exists" },
-        { status: 400 },
-      );
+    if (!user) {
+      // For security reasons, don't reveal that the user doesn't exist
+      return NextResponse.json({
+        message:
+          "If an account with this email exists, a verification link has been sent.",
+        success: true,
+      });
     }
 
-    //hash password
-    const salt = await bcryptjs.genSalt(10);
-    const hashedPassword = await bcryptjs.hash(password, salt);
+    // Check if user is already verified
+    if (user.isVerfied) {
+      return NextResponse.json({
+        message: "Your email is already verified. You can now log in.",
+        success: true,
+      });
+    }
 
-    // Generate verification token
+    // Generate new verification token
     const verifyToken =
       Math.random().toString(36).substring(2, 15) +
       Math.random().toString(36).substring(2, 15);
     const verifyTokenExpiry = Date.now() + 3600000; // 1 hour
 
-    const newUser = new User({
-      username,
-      email,
-      password: hashedPassword,
-      verifyToken,
-      verifyTokenExpiry,
-    });
+    // Update user with new verification token
+    user.verifyToken = verifyToken;
+    user.verifyTokenExpiry = verifyTokenExpiry;
 
-    const savedUser = await newUser.save();
-    console.log(savedUser);
+    await user.save();
 
     // Send verification email
     await sendVerificationEmail(email, verifyToken);
 
     return NextResponse.json({
       message:
-        "User created successfully. Please check your email to verify your account.",
+        "If an account with this email exists, a verification link has been sent.",
       success: true,
-      savedUser: {
-        id: savedUser._id,
-        username: savedUser.username,
-        email: savedUser.email,
-        isVerfied: savedUser.isVerfied,
-      },
     });
   } catch (error: unknown) {
     const errorMessage =

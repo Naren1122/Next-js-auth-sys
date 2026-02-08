@@ -10,6 +10,7 @@ export async function POST(request: NextRequest) {
   try {
     const reqBody = await request.json();
     const { email, password } = reqBody;
+
     // display the email and hashed password in the console
     console.log("email:", email);
     console.log("password:", password);
@@ -30,6 +31,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid password" }, { status: 400 });
     }
     console.log(user);
+
+    //check if email is verified
+    if (!user.isVerfied) {
+      return NextResponse.json(
+        { error: "Please verify your email before logging in" },
+        { status: 403 },
+      );
+    }
 
     //create token data
     const tokenData = {
