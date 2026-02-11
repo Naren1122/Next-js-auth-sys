@@ -1,81 +1,110 @@
-// auth/utils/email.js
 import nodemailer from "nodemailer";
 
-// Create a transporter for sending emails
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.GMAIL_EMAIL,
-    pass: process.env.GMAIL_PASSWORD,
-  },
-});
-
-/**
- * Send verification email to user
- * @param {string} email - User's email address
- * @param {string} verificationToken - Verification token
- * @returns {Promise} - Promise that resolves when email is sent
- */
-export const sendVerificationEmail = async (email, verificationToken) => {
+// Function to send verification email
+export const sendEmail = async ({ email, emailType, userId }) => {
   try {
-    const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/verify-email?token=${verificationToken}`;
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.GMAIL_EMAIL,
+        pass: process.env.GMAIL_PASSWORD,
+      },
+    });
+
+    const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/verify-email?token=${userId}`;
 
     const mailOptions = {
-      from: process.env.GMAIL_EMAIL,
+      from: process.env.EMAIL_FROM || "noreply@yourapp.com",
       to: email,
-      subject: "Verify Your Email Address",
+      subject:
+        emailType === "VERIFY" ? "Verify Your Email" : "Reset Your Password",
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #333;">Verify Your Email Address</h2>
-          <p style="color: #666;">Thank you for signing up! Please click the button below to verify your email address:</p>
-          <a href="${verificationUrl}" style="display: inline-block; padding: 12px 24px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0;">Verify Email</a>
-          <p style="color: #666;">Or copy and paste this link into your browser:</p>
-          <p style="color: #666; word-break: break-all;">${verificationUrl}</p>
-          <p style="color: #999; font-size: 12px; margin-top: 30px;">This link will expire in 24 hours.</p>
-        </div>
+        <h1>${emailType === "VERIFY" ? "Verify Your Email" : "Reset Your Password"}</h1>
+        <p>Thank you for signing up! Please verify your email address by clicking the link below:</p>
+        <a href="${verifyUrl}">Verify Email</a>
+        <p>If you did not create an account, please ignore this email.</p>
       `,
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent: %s", info.messageId);
-    return { success: true, messageId: info.messageId };
+    await transporter.sendMail(mailOptions);
+    console.log("Email sent successfully");
   } catch (error) {
-    console.error("Error sending verification email:", error);
-    return { success: false, error: error.message };
+    console.error("Error sending email:", error);
+    throw new Error("Failed to send email");
   }
 };
 
-/**
- * Send password reset email to user
- * @param {string} email - User's email address
- * @param {string} resetToken - Password reset token
- * @returns {Promise} - Promise that resolves when email is sent
- */
-export const sendPasswordResetEmail = async (email, resetToken) => {
+// Function to send verification email
+export const sendVerificationEmail = async (email, token) => {
   try {
-    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/reset-password?token=${resetToken}`;
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.GMAIL_EMAIL,
+        pass: process.env.GMAIL_PASSWORD,
+      },
+    });
+
+    const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/verify-email?token=${token}`;
 
     const mailOptions = {
-      from: process.env.GMAIL_EMAIL,
+      from: process.env.EMAIL_FROM || "noreply@yourapp.com",
       to: email,
-      subject: "Reset Your Password",
+      subject: "Verify Your Email",
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #333;">Reset Your Password</h2>
-          <p style="color: #666;">You requested a password reset. Please click the button below to reset your password:</p>
-          <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0;">Reset Password</a>
-          <p style="color: #666;">Or copy and paste this link into your browser:</p>
-          <p style="color: #666; word-break: break-all;">${resetUrl}</p>
-          <p style="color: #999; font-size: 12px; margin-top: 30px;">This link will expire in 1 hour.</p>
-        </div>
+        <h1>Verify Your Email</h1>
+        <p>Thank you for signing up! Please verify your email address by clicking the link below:</p>
+        <a href="${verifyUrl}">Verify Email</a>
+        <p>This link will expire in 1 hour.</p>
+        <p>If you did not create an account, please ignore this email.</p>
       `,
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent: %s", info.messageId);
-    return { success: true, messageId: info.messageId };
+    await transporter.sendMail(mailOptions);
+    console.log("Verification email sent successfully");
+  } catch (error) {
+    console.error("Error sending verification email:", error);
+    throw new Error("Failed to send verification email");
+  }
+};
+
+// Function to send password reset email
+export const sendPasswordResetEmail = async (email, token) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.GMAIL_EMAIL,
+        pass: process.env.GMAIL_PASSWORD,
+      },
+    });
+
+    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/verify-reset-token?token=${token}`;
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || "noreply@yourapp.com",
+      to: email,
+      subject: "Reset Your Password",
+      html: `
+        <h1>Password Reset Request</h1>
+        <p>You recently requested to reset your password for your account.</p>
+        <p>Click the link below to reset your password:</p>
+        <a href="${resetUrl}">Reset Password</a>
+        <p>This link will expire in 1 hour.</p>
+        <p>If you did not request a password reset, please ignore this email.</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log("Password reset email sent successfully");
   } catch (error) {
     console.error("Error sending password reset email:", error);
-    return { success: false, error: error.message };
+    throw new Error("Failed to send password reset email");
   }
 };

@@ -95,6 +95,14 @@ export default function LoginPage() {
             value={user.password}
             onChange={(e) => setUser({ ...user, password: e.target.value })}
           />
+          <div className="text-right mt-2">
+            <Link
+              href="/forgot-password"
+              className="text-blue-600 hover:text-blue-800 text-sm"
+            >
+              Forgot Password?
+            </Link>
+          </div>
         </div>
 
         <div className="flex justify-between items-center mb-4">
