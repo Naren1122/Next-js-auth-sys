@@ -2,13 +2,34 @@ import { connect } from "@/dbconfig/dbconfig";
 import User from "@/models/userModel";
 import { NextRequest, NextResponse } from "next/server";
 import { sendPasswordResetEmail } from "@/utils/email";
+import { emailSchema } from "@/lib/validations/auth";
 
 connect();
 
 export async function POST(request: NextRequest) {
   try {
     const reqBody = await request.json();
-    const { email } = reqBody;
+
+    // Validate request body using Zod schema
+    const validationResult = emailSchema.safeParse(reqBody);
+
+    if (!validationResult.success) {
+      // Extract and format validation errors
+      const errors = validationResult.error.issues.map((issue) => ({
+        field: issue.path.join("."),
+        message: issue.message,
+      }));
+
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          errors,
+        },
+        { status: 400 },
+      );
+    }
+
+    const { email } = validationResult.data;
 
     console.log("Forgot password request for email:", email);
 

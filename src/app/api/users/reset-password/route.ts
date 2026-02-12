@@ -2,13 +2,34 @@ import { connect } from "@/dbconfig/dbconfig";
 import User from "@/models/userModel";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { resetPasswordSchema } from "@/lib/validations/auth";
 
 connect();
 
 export async function POST(request: NextRequest) {
   try {
     const reqBody = await request.json();
-    const { token, password } = reqBody;
+
+    // Validate request body using Zod schema
+    const validationResult = resetPasswordSchema.safeParse(reqBody);
+
+    if (!validationResult.success) {
+      // Extract and format validation errors
+      const errors = validationResult.error.issues.map((issue) => ({
+        field: issue.path.join("."),
+        message: issue.message,
+      }));
+
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          errors,
+        },
+        { status: 400 },
+      );
+    }
+
+    const { token, password } = validationResult.data;
 
     console.log("Reset password request received");
 

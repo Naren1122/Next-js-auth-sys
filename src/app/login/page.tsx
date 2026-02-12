@@ -3,6 +3,9 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,17 +13,20 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [showResendLink, setShowResendLink] = useState(false);
 
-  const [user, setUser] = useState({
-    email: "",
-    password: "",
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
   });
 
-  const onLogin = async () => {
+  const onLogin = async (data: LoginInput) => {
     try {
       setLoading(true);
       setError("");
       setShowResendLink(false);
-      const response = await axios.post("/api/users/login", user);
+      const response = await axios.post("/api/users/login", data);
       console.log("Login success", response.data);
       router.push("/profile");
     } catch (error: unknown) {
@@ -63,64 +69,74 @@ export default function LoginPage() {
           </div>
         )}
 
-        <div className="mb-4">
-          <label
-            htmlFor="email"
-            className="block text-gray-700 text-sm font-bold mb-2"
-          >
-            Email:
-          </label>
-          <input
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            type="email"
-            id="email"
-            placeholder="Email"
-            value={user.email}
-            onChange={(e) => setUser({ ...user, email: e.target.value })}
-          />
-        </div>
+        <form onSubmit={handleSubmit(onLogin)}>
+          <div className="mb-4">
+            <label
+              htmlFor="email"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Email:
+            </label>
+            <input
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="email"
+              id="email"
+              placeholder="Email"
+              {...register("email")}
+            />
+            {errors.email && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
 
-        <div className="mb-4">
-          <label
-            htmlFor="password"
-            className="block text-gray-700 text-sm font-bold mb-2"
-          >
-            Password:
-          </label>
-          <input
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            type="password"
-            id="password"
-            placeholder="Password"
-            value={user.password}
-            onChange={(e) => setUser({ ...user, password: e.target.value })}
-          />
-          <div className="text-right mt-2">
+          <div className="mb-4">
+            <label
+              htmlFor="password"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Password:
+            </label>
+            <input
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="password"
+              id="password"
+              placeholder="Password"
+              {...register("password")}
+            />
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.password.message}
+              </p>
+            )}
+            <div className="text-right mt-2">
+              <Link
+                href="/forgot-password"
+                className="text-blue-600 hover:text-blue-800 text-sm"
+              >
+                Forgot Password?
+              </Link>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center mb-4">
             <Link
-              href="/forgot-password"
+              href="/signup"
               className="text-blue-600 hover:text-blue-800 text-sm"
             >
-              Forgot Password?
+              Don&apos;t have an account? Sign up
             </Link>
           </div>
-        </div>
 
-        <div className="flex justify-between items-center mb-4">
-          <Link
-            href="/signup"
-            className="text-blue-600 hover:text-blue-800 text-sm"
+          <button
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            type="submit"
+            disabled={loading}
           >
-            Don&apos;t have an account? Sign up
-          </Link>
-        </div>
-
-        <button
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          onClick={onLogin}
-          disabled={loading}
-        >
-          {loading ? "Processing..." : "Login"}
-        </button>
+            {loading ? "Processing..." : "Login"}
+          </button>
+        </form>
       </div>
     </div>
   );

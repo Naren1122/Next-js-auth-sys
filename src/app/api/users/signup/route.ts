@@ -3,13 +3,34 @@ import User from "@/models/userModel";
 import { NextRequest, NextResponse } from "next/server";
 import bcryptjs from "bcryptjs";
 import { sendVerificationEmail } from "@/utils/email";
+import { signUpSchema } from "@/lib/validations/auth";
 
 connect();
 
 export async function POST(request: NextRequest) {
   try {
     const reqBody = await request.json();
-    const { username, email, password } = reqBody;
+
+    // Validate request body using Zod schema
+    const validationResult = signUpSchema.safeParse(reqBody);
+
+    if (!validationResult.success) {
+      // Extract and format validation errors
+      const errors = validationResult.error.issues.map((issue) => ({
+        field: issue.path.join("."),
+        message: issue.message,
+      }));
+
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          errors,
+        },
+        { status: 400 },
+      );
+    }
+
+    const { email, password } = validationResult.data;
 
     console.log(reqBody);
 
@@ -34,7 +55,7 @@ export async function POST(request: NextRequest) {
     const verifyTokenExpiry = Date.now() + 3600000; // 1 hour
 
     const newUser = new User({
-      username,
+      username: email.split("@")[0], // Using email prefix as username
       email,
       password: hashedPassword,
       verifyToken,

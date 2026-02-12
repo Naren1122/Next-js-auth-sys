@@ -1,129 +1,101 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  verifyEmailSchema,
+  type VerifyEmailInput,
+} from "@/lib/validations/auth";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading",
-  );
-  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  useEffect(() => {
-    const verifyEmail = async () => {
-      const token = searchParams.get("token");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<VerifyEmailInput>({
+    resolver: zodResolver(verifyEmailSchema),
+  });
 
-      if (!token) {
-        setStatus("error");
-        setMessage("Invalid verification link");
-        return;
+  const onVerifyEmail = async (data: VerifyEmailInput) => {
+    try {
+      setLoading(true);
+      setError("");
+      setSuccess("");
+      const response = await axios.post("/api/users/verify-email", data);
+      console.log("Verify email success", response.data);
+      setSuccess("Email verified successfully");
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
+    } catch (error: unknown) {
+      setLoading(false);
+      if (axios.isAxiosError(error) && error.response) {
+        setError(error.response.data.error || "Failed to verify email");
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An unknown error occurred");
       }
-
-      try {
-        const response = await fetch("/api/users/verify-email", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ token }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          setStatus("success");
-          setMessage(data.message || "Email verified successfully!");
-
-          // Redirect to login page after 3 seconds
-          setTimeout(() => {
-            router.push("/login");
-          }, 3000);
-        } else {
-          setStatus("error");
-          setMessage(data.error || "Failed to verify email");
-        }
-      } catch (error) {
-        setStatus("error");
-
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        setMessage(
-          `An error occurred while verifying your email: ${errorMessage}`,
-        );
-      }
-    };
-    verifyEmail();
-  }, [searchParams, router]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-        {status === "loading" && (
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-700">Verifying your email...</p>
-          </div>
-        )}
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+      <h1>Verify Email</h1>
+      <hr />
 
-        {status === "success" && (
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-              <svg
-                className="h-6 w-6 text-green-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <h2 className="mt-4 text-xl font-semibold text-gray-900">
-              Email Verified!
-            </h2>
-            <p className="mt-2 text-gray-600">{message}</p>
-            <p className="mt-4 text-sm text-gray-500">
-              You will be redirected to the login page in a few seconds...
-            </p>
-          </div>
-        )}
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
+        </div>
+      )}
 
-        {status === "error" && (
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-              <svg
-                className="h-6 w-6 text-red-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </div>
-            <h2 className="mt-4 text-xl font-semibold text-gray-900">
-              Verification Failed
-            </h2>
-            <p className="mt-2 text-gray-600">{message}</p>
-            <button
-              onClick={() => router.push("/login")}
-              className="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Go to Login
-            </button>
-          </div>
-        )}
-      </div>
+      {success && (
+        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+          {success}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit(onVerifyEmail)}>
+        <div className="mb-4">
+          <label
+            htmlFor="email"
+            className="block text-gray-700 text-sm font-bold mb-2"
+          >
+            Email:
+          </label>
+          <input
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            type="email"
+            id="email"
+            placeholder="Enter your email"
+            {...register("email")}
+          />
+          {errors.email && (
+            <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+          )}
+        </div>
+
+        <Link href="/login">Back to Login</Link>
+
+        <button
+          className="p-2 bg:blue-500 font-bold py border rounded-md focus:border-blue-100 mt-4"
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? "Processing..." : "Verify Email"}
+        </button>
+      </form>
     </div>
   );
 }

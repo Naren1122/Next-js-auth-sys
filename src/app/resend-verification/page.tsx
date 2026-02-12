@@ -1,47 +1,82 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  resendVerificationSchema,
+  type ResendVerificationInput,
+} from "@/lib/validations/auth";
 
 export default function ResendVerificationPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [message, setMessage] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // State for countdown timer and resend functionality
+  const [canResend, setCanResend] = useState(true);
+  const [countdown, setCountdown] = useState(0);
+  const [isResending, setIsResending] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ResendVerificationInput>({
+    resolver: zodResolver(resendVerificationSchema),
+  });
+
+  const onSubmit = async (data: ResendVerificationInput) => {
     setStatus("loading");
+    setIsResending(true);
 
     try {
-      const response = await fetch("/api/users/resend-verification", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
+      const response = await axios.post("/api/users/resend-verification", data);
+      setStatus("success");
+      setMessage(
+        response.data.message || "Verification link sent successfully!",
+      );
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setStatus("success");
-        setMessage(data.message || "Verification link sent successfully!");
-      } else {
-        setStatus("error");
-        setMessage(data.error || "Failed to send verification link");
-      }
+      // Start countdown timer after successful resend
+      setCanResend(false);
+      setCountdown(60);
     } catch (error) {
       setStatus("error");
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      let errorMessage = "Unknown error";
+      if (axios.isAxiosError(error) && error.response) {
+        errorMessage =
+          error.response.data.error || "Failed to send verification link";
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       setMessage(
-        `An error occurred while sending the verification link:${errorMessage}`,
+        `An error occurred while sending the verification link: ${errorMessage}`,
       );
+    } finally {
+      setIsResending(false);
     }
   };
+
+  // Countdown timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (countdown > 0) {
+      interval = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (countdown === 0 && canResend === false) {
+      setCanResend(true);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [countdown, canResend]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -51,7 +86,7 @@ export default function ResendVerificationPage() {
         </h2>
 
         {status === "idle" && (
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className="mb-4">
               <label
                 htmlFor="email"
@@ -62,19 +97,31 @@ export default function ResendVerificationPage() {
               <input
                 type="email"
                 id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                {...register("email")}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter your email"
               />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={!canResend || isResending}
+              className={`w-full py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                !canResend || isResending
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
             >
-              Send Verification Link
+              {isResending
+                ? "Sending..."
+                : canResend
+                  ? "Send Verification Link"
+                  : `Resend in ${countdown}s`}
             </button>
 
             <div className="mt-4 text-center">
@@ -117,9 +164,31 @@ export default function ResendVerificationPage() {
               Check Your Email
             </h2>
             <p className="mt-2 text-gray-600">{message}</p>
+
+            {/* Show countdown timer and resend option */}
+            {!canResend && (
+              <p className="mt-4 text-sm text-gray-500">
+                You can resend another verification link in {countdown} seconds
+              </p>
+            )}
+
+            {canResend && (
+              <button
+                onClick={handleSubmit(onSubmit)}
+                disabled={isResending}
+                className={`mt-4 w-full py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  isResending
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
+              >
+                {isResending ? "Sending..." : "Resend Verification Link"}
+              </button>
+            )}
+
             <button
               onClick={() => router.push("/login")}
-              className="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-4 w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
             >
               Back to Login
             </button>

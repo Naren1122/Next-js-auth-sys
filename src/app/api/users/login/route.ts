@@ -3,13 +3,34 @@ import User from "@/models/userModel";
 import { NextRequest, NextResponse } from "next/server";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { loginSchema } from "@/lib/validations/auth";
 
 connect();
 
 export async function POST(request: NextRequest) {
   try {
     const reqBody = await request.json();
-    const { email, password } = reqBody;
+
+    // Validate request body using Zod schema
+    const validationResult = loginSchema.safeParse(reqBody);
+
+    if (!validationResult.success) {
+      // Extract and format validation errors
+      const errors = validationResult.error.issues.map((issue) => ({
+        field: issue.path.join("."),
+        message: issue.message,
+      }));
+
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          errors,
+        },
+        { status: 400 },
+      );
+    }
+
+    const { email, password } = validationResult.data;
 
     // display the email and hashed password in the console
     console.log("email:", email);

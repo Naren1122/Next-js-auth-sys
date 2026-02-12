@@ -1,146 +1,160 @@
 "use client";
-
-import { useState } from "react";
+import Link from "next/link";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  resetPasswordSchema,
+  type ResetPasswordInput,
+} from "@/lib/validations/auth";
 
-export default function ResetPassword() {
+export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [tokenValid, setTokenValid] = useState(true);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ResetPasswordInput>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      token: token || "",
+    },
+  });
 
-    // Validate passwords
-    if (!password || !confirmPassword) {
-      setError("Please fill in all fields");
+  useEffect(() => {
+    if (!token) {
+      setError("Invalid reset link. No token provided.");
+      setTokenValid(false);
+    }
+  }, [token]);
+
+  const onResetPassword = async (data: ResetPasswordInput) => {
+    if (!token) {
+      setError("Invalid reset link. No token provided.");
       return;
     }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
-
-    setLoading(true);
 
     try {
+      setLoading(true);
+      setError("");
+      setSuccess("");
       const response = await axios.post("/api/users/reset-password", {
+        ...data,
         token,
-        password,
       });
-
-      if (response.data.success) {
-        setSuccess(true);
-        // Redirect to login page after a short delay
-        setTimeout(() => {
-          router.push("/login");
-        }, 3000);
-      } else {
-        setError(response.data.error || "Failed to reset password");
-      }
+      console.log("Reset password success", response.data);
+      setSuccess("Password has been reset successfully");
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        setError(error.response?.data?.error || "Failed to reset password");
+      setLoading(false);
+      if (axios.isAxiosError(error) && error.response) {
+        setError(error.response.data.error || "Failed to reset password");
+      } else if (error instanceof Error) {
+        setError(error.message);
       } else {
-        setError("Failed to reset password");
+        setError("An unknown error occurred");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Reset Password</h1>
-
-        {success ? (
-          <div className="text-center py-8">
-            <div className="text-green-500 mb-4">
-              <svg
-                className="w-16 h-16 mx-auto"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                ></path>
-              </svg>
-            </div>
-            <p className="text-gray-700 mb-4">Password reset successful!</p>
-            <p className="text-gray-600">Redirecting to login page...</p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                New Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your new password"
-                required
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Confirm your new password"
-                required
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-300"
-            >
-              {loading ? "Resetting..." : "Reset Password"}
-            </button>
-          </form>
-        )}
+  if (!tokenValid) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+        <h1>Reset Password</h1>
+        <hr />
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
+        </div>
+        <Link href="/forgot-password" className="text-blue-500 hover:underline">
+          Request New Reset Link
+        </Link>
       </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+      <h1>Reset Password</h1>
+      <hr />
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+          {success}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit(onResetPassword)}>
+        <div className="mb-4">
+          <label
+            htmlFor="password"
+            className="block text-gray-700 text-sm font-bold mb-2"
+          >
+            New Password:
+          </label>
+          <input
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            type="password"
+            id="password"
+            placeholder="New Password"
+            {...register("password")}
+          />
+          {errors.password && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.password.message}
+            </p>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <label
+            htmlFor="confirmPassword"
+            className="block text-gray-700 text-sm font-bold mb-2"
+          >
+            Confirm Password:
+          </label>
+          <input
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            type="password"
+            id="confirmPassword"
+            placeholder="Confirm Password"
+            {...register("confirmPassword")}
+          />
+          {errors.confirmPassword && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.confirmPassword.message}
+            </p>
+          )}
+        </div>
+
+        <Link href="/login">Back to Login</Link>
+
+        <button
+          className="p-2 bg:blue-500 font-bold py border rounded-md focus:border-blue-100 mt-4"
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? "Processing..." : "Reset Password"}
+        </button>
+      </form>
     </div>
   );
 }
