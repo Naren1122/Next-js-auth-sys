@@ -1,10 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
+import {
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  ArrowLeft,
+  KeyRound,
+} from "lucide-react";
 
-export default function VerifyResetToken() {
+function VerifyTokenContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -14,7 +21,6 @@ export default function VerifyResetToken() {
 
   useEffect(() => {
     const verifyToken = async () => {
-      // Handle the missing token case inside the async flow
       if (!token) {
         setError("Invalid reset link. No token provided.");
         setLoading(false);
@@ -28,8 +34,7 @@ export default function VerifyResetToken() {
 
         if (response.data.success) {
           setValid(true);
-          setLoading(false); // Ensure loading is set to false on success
-          // Redirect to reset password page after a short delay
+          setLoading(false);
           setTimeout(() => {
             router.push(`/reset-password?token=${token}`);
           }, 2000);
@@ -53,68 +58,77 @@ export default function VerifyResetToken() {
   }, [token, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Password Reset</h1>
+    <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+      <div className="text-center">
+        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 mb-4">
+          <KeyRound className="h-6 w-6" />
+        </div>
+        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
+          Password Reset
+        </h1>
+      </div>
 
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Verifying your token...</p>
-          </div>
-        ) : valid ? (
-          <div className="text-center py-8">
-            <div className="text-green-500 mb-4">
-              <svg
-                className="w-16 h-16 mx-auto"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                ></path>
-              </svg>
-            </div>
-            <p className="text-gray-700 mb-4">Token verified successfully!</p>
-            <p className="text-gray-600">
-              Redirecting to reset password page...
+      {loading ? (
+        <div className="text-center py-10 space-y-4">
+          <Loader2 className="h-12 w-12 text-blue-600 animate-spin mx-auto" />
+          <p className="text-gray-600 font-medium">Verifying your link...</p>
+        </div>
+      ) : valid ? (
+        <div className="text-center py-10 space-y-4">
+          <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
+          <div className="space-y-2">
+            <p className="text-lg font-bold text-gray-900">Token verified!</p>
+            <p className="text-sm text-gray-500">
+              Redirecting you to the new password page...
             </p>
           </div>
-        ) : (
-          <div className="text-center py-8">
-            <div className="text-red-500 mb-4">
-              <svg
-                className="w-16 h-16 mx-auto"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                ></path>
-              </svg>
-            </div>
-            <p className="text-red-600 mb-4">{error}</p>
-            <p className="text-gray-600 mb-6">
-              The reset link is invalid or has expired. Please request a new
-              password reset.
+        </div>
+      ) : (
+        <div className="text-center py-6 space-y-4">
+          <XCircle className="h-16 w-16 text-red-500 mx-auto" />
+          <div className="space-y-2">
+            <p className="text-lg font-bold text-gray-900">
+              Verification Failed
             </p>
+            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-xs text-gray-500">
+              The reset link is invalid or has expired.
+            </p>
+          </div>
+
+          <div className="pt-6">
             <button
               onClick={() => router.push("/forgot-password")}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
             >
               Request New Reset Link
             </button>
+            <button
+              onClick={() => router.push("/login")}
+              className="mt-3 flex items-center justify-center w-full text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Login
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function VerifyResetToken() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <Suspense
+        fallback={
+          <div className="text-center">
+            <Loader2 className="h-10 w-10 text-gray-300 animate-spin mx-auto" />
+          </div>
+        }
+      >
+        <VerifyTokenContent />
+      </Suspense>
     </div>
   );
 }

@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, password } = validationResult.data;
+    const { email, password, username } = validationResult.data;
 
     console.log(reqBody);
 
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     const verifyTokenExpiry = Date.now() + 3600000; // 1 hour
 
     const newUser = new User({
-      username: email.split("@")[0], // Using email prefix as username
+      username,
       email,
       password: hashedPassword,
       verifyToken,
