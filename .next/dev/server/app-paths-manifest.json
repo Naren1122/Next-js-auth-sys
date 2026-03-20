@@ -1,0 +1,17 @@
+{
+  "/api/users/forgot-password/route": "app/api/users/forgot-password/route.js",
+  "/api/users/login/route": "app/api/users/login/route.js",
+  "/api/users/logout/route": "app/api/users/logout/route.js",
+  "/api/users/me/route": "app/api/users/me/route.js",
+  "/api/users/reset-password/route": "app/api/users/reset-password/route.js",
+  "/api/users/signup/route": "app/api/users/signup/route.js",
+  "/api/users/verify-email/route": "app/api/users/verify-email/route.js",
+  "/api/users/verify-reset-token/route": "app/api/users/verify-reset-token/route.js",
+  "/forgot-password/page": "app/forgot-password/page.js",
+  "/login/page": "app/login/page.js",
+  "/profile/page": "app/profile/page.js",
+  "/reset-password/page": "app/reset-password/page.js",
+  "/signup/page": "app/signup/page.js",
+  "/verify-email/page": "app/verify-email/page.js",
+  "/verify-reset-token/page": "app/verify-reset-token/page.js"
+}

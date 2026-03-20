@@ -1,0 +1,30 @@
+[00:00:01.113] Server  LOG     ✓ Ready in 843ms
+[00:00:03.743] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:07.020] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:00:50.544] Server  LOG     {}
+[00:00:51.133] Server  LOG     MongoDB connected successfully
+[00:00:51.715] Server  LOG     {}
+[00:00:55.414] Server  LOG     Verification email sent successfully
+[00:00:55.525] Browser LOG     Signup success {"message":"User created successfully. Please check your email to verify your account.","savedUser":{"email":"naren.14151415@gmail.com","id":"69bcdf91638b175d4715cb42","isVerfied":false,"username":"Naren"},"success":true}
+[00:01:13.585] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:01:13.798] Server  LOG     Verification token: "7dfn0wquc3qcf4t2zoxyu"
+[00:01:16.101] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:01:27.712] Server  LOG     email: "naren.14151415@gmail.com"
+[00:01:27.714] Server  LOG     password: "Naren123!"
+[00:01:27.765] Server  LOG     user exists
+[00:01:27.865] Server  LOG     {}
+[00:01:27.976] Browser LOG     Login success {"message":"Login successful","success":true}
+[00:01:31.527] Browser LOG     {"data":{"__v":0,"_id":"69bcdf91638b175d4715cb42","email":"naren.14151415@gmail.com","isAdmin":false,"isVerfied":true,"username":"Naren"},"mesaaage":"User found"}
+[00:01:41.393] Server  LOG     Forgot password request for email: "naren.14151415@gmail.com"
+[00:01:45.189] Server  LOG     Password reset email sent successfully
+[00:01:45.293] Browser LOG     Forgot password success {"message":"Password reset link sent to your email","success":true}
+[00:01:54.073] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:01:54.230] Server  LOG     Verifying reset token
+[00:01:56.990] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:02:11.881] Server  LOG     Reset password request received
+[00:02:27.120] Server  LOG     email: "naren.14151415@gmail.com"
+[00:02:27.121] Server  LOG     password: "Naren12345!"
+[00:02:27.173] Server  LOG     user exists
+[00:02:27.270] Server  LOG     {}
+[00:02:27.376] Browser LOG     Login success {"message":"Login successful","success":true}
+[00:02:30.467] Browser LOG     {"data":{"__v":0,"_id":"69bcdf91638b175d4715cb42","email":"naren.14151415@gmail.com","isAdmin":false,"isVerfied":true,"username":"Naren"},"mesaaage":"User found"}

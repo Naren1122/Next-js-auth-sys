@@ -1,0 +1,3 @@
+{
+  "/api/users/verify-reset-token/route": "app/api/users/verify-reset-token/route.js"
+}
